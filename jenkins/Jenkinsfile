@@ -1,25 +1,41 @@
 pipeline {
-    agent any
-    stages {
-        stage('Build') {
-            steps {
-                bat 'mvn -B -DskipTests clean package'
-            }
-        }
-        stage('Test') {
-            steps {
-                bat 'mvn test'
-            }
-            post {
-                always {
-                    junit 'target/surefire-reports/*.xml'
-                }
-            }
-        }
-        stage('Deliver') {
-            steps {
-                bat '/jenkins/scripts/deliver.sh'
-            }
-        }
+  agent any
+  stages {
+    stage("Clean Up"){
+      steps{
+        deleteDir()
+      }
     }
+    stage("Clone Repo"){
+      steps {
+        bat "git clone https://github.com/CBoton/simple-java-maven-app.git"
+      }
+    }
+    stage("Build"){
+      steps {
+        dir("simple-java-maven-app") {
+          bat "mvn clean install"
+        }
+      }
+    }
+    stage("Test") {
+      steps {
+        dir("simple-java-maven-app") {
+          bat "mvn test"
+        }
+      }
+    }
+    stage("Package") {
+        steps {
+          dir("simple-java-maven-app") {
+            bat "mvn package"
+        }
+        post {
+            dir("simple-java-maven-app") {
+            archiveArtifacts 'target/*.jar'
+          }
+        }
+      }
+    }
+  }
 }
